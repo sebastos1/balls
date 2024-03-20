@@ -562,6 +562,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "balls"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "bevy_kira_audio",
+ "bevy_matchbox",
+ "bevy_rapier3d",
+ "embed-resource",
+ "image",
+ "rand",
+ "web-sys",
+ "webbrowser",
+ "winit",
+]
+
+[[package]]
 name = "base16ct"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2510,22 +2526,6 @@ dependencies = [
  "pin-project-lite",
  "pin-utils",
  "slab",
-]
-
-[[package]]
-name = "game"
-version = "0.1.0"
-dependencies = [
- "bevy",
- "bevy_kira_audio",
- "bevy_matchbox",
- "bevy_rapier3d",
- "embed-resource",
- "image",
- "rand",
- "web-sys",
- "webbrowser",
- "winit",
 ]
 
 [[package]]
