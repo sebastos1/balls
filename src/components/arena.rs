@@ -5,8 +5,10 @@ pub fn init(
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
 ) {
-    let arena_length = 9. * 5.;
-    let arena_width = arena_length / 2.;
+    let arena_length = 9. * 5.; // 9 ft
+    let arena_width = arena_length / 2.; // 4.5 ft
+    // let rail_height = 1.5 / 12. * 5.; // 1.5 inches
+    // let rail_thickness = rail_height * 2.;
 
     commands.spawn(PbrBundle {
         mesh: meshes.add(Plane3d::default().mesh().size(arena_length, arena_width)),

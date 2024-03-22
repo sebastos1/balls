@@ -1,4 +1,5 @@
 use crate::*;
+use bevy_ggrs::LocalPlayers;
 use bevy::input::mouse::{MouseMotion, MouseWheel};
 
 pub fn init(
@@ -13,46 +14,60 @@ pub fn init(
 
 pub fn pan_cam(
     time: Res<Time>,
+    local_players: Res<LocalPlayers>,
     mut mouse_motion_events: EventReader<MouseMotion>,
     mut cameras: Query<(&mut Transform, &mut View), With<Camera>>,
-    ball: Query<&Transform, (With<Ball>, Without<Camera>)>,
+    player: Query<(&Transform, &Player), Without<Camera>>,
 ) {
-    let ball_transform = ball.single();
-    for (mut camera_transform, mut view) in cameras.iter_mut() {
-        let mut delta = Vec2::ZERO;
-        for event in mouse_motion_events.read() {
-            delta += event.delta;
+    for (ball_transform, player) in player.iter() {
+        if !local_players.0.contains(&player.handle) {
+            continue;
         }
 
-        let sensitivity = Vec2::new(0.3, 0.3);
-
-        view.yaw += delta.x * sensitivity.x * time.delta_seconds();
-        view.pitch += delta.y * sensitivity.y * time.delta_seconds();
-        view.pitch = view.pitch.clamp(-std::f32::consts::FRAC_PI_2 + 0.1, std::f32::consts::FRAC_PI_2 - 0.1);
-
-        let radius = view.zoom;
-        let x = radius * view.yaw.cos() * view.pitch.cos();
-        let y = radius * view.pitch.sin();
-        let z = radius * view.yaw.sin() * view.pitch.cos();
-
-        camera_transform.translation = ball_transform.translation + Vec3::new(x, y, z);
-        let focus_point = ball_transform.translation + Vec3::new(0., 2., 0.);
-        camera_transform.look_at(focus_point, Vec3::Y);
+        for (mut camera_transform, mut view) in cameras.iter_mut() {
+            let mut delta = Vec2::ZERO;
+            for event in mouse_motion_events.read() {
+                delta += event.delta;
+            }
+    
+            let sensitivity = Vec2::new(0.3, 0.3);
+    
+            view.yaw += delta.x * sensitivity.x * time.delta_seconds();
+            view.pitch += delta.y * sensitivity.y * time.delta_seconds();
+            view.pitch = view.pitch.clamp(-std::f32::consts::FRAC_PI_2 + 0.1, std::f32::consts::FRAC_PI_2 - 0.1);
+    
+            let radius = view.zoom;
+            let x = radius * view.yaw.cos() * view.pitch.cos();
+            let y = radius * view.pitch.sin();
+            let z = radius * view.yaw.sin() * view.pitch.cos();
+    
+            camera_transform.translation = ball_transform.translation + Vec3::new(x, y, z);
+            let focus_point = ball_transform.translation + Vec3::new(0., 2., 0.);
+            camera_transform.look_at(focus_point, Vec3::Y);
+        }
     }
 }
 
 pub fn zoom(
+    local_players: Res<LocalPlayers>,
     mut mouse_wheel_events: EventReader<MouseWheel>,
     mut cameras: Query<&mut View, With<Camera>>,
+    player: Query<&Player, Without<Camera>>,
 ) {
-    let mut view = cameras.single_mut();
+    for player in player.iter() {
+        if !local_players.0.contains(&player.handle) {
+            continue;
+        }
 
-    let sensitivity = 0.01;
-    let min = 5.;
-    let max = 15.;
-
-    for event in mouse_wheel_events.read() {
-        view.zoom -= event.y * sensitivity;
-        view.zoom = view.zoom.clamp(min, max);
+        for mut view in cameras.iter_mut() {
+            let sensitivity = 0.01;
+            let min = 5.;
+            let max = 15.;
+    
+            for event in mouse_wheel_events.read() {
+                view.zoom -= event.y * sensitivity;
+                view.zoom = view.zoom.clamp(min, max);
+            }
+        }
     }
 }

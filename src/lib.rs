@@ -1,17 +1,27 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 
+pub mod controls;
+pub mod multiplayer;
 pub mod components;
 pub use components::*;
+
+#[derive(States, Clone, Eq, PartialEq, Debug, Hash, Default)]
+pub enum GameState {
+    #[default]
+    Matchmaking,
+    InGame,
+}
 
 #[derive(Component)]
 pub struct Ground;
 
 #[derive(Component)]
-pub struct Ball {
-    pub player: u8,
-    pub cooldown: f32,
+pub struct Player {
+    pub handle: usize,
     pub grounded: bool,
+    pub cooldown: f32,
+    pub max_cooldown: f32,
 }
 
 #[derive(Component)]
@@ -22,6 +32,4 @@ pub struct View {
 }
 
 #[derive(Component)]
-pub struct Meter {
-    pub max: f32,
-}
+pub struct Meter;

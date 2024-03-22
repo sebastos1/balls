@@ -1,6 +1,9 @@
 use crate::*;
+use bevy_ggrs::LocalPlayers;
 
-pub fn init(commands: &mut Commands) {
+pub fn init(
+    commands: &mut Commands,
+) {
     commands
         .spawn(NodeBundle {
             style: Style {
@@ -41,8 +44,8 @@ pub fn init(commands: &mut Commands) {
             parent.spawn(NodeBundle {
                 style: Style {
                     position_type: PositionType::Absolute,
-                    left: Val::Px(5.),
-                    bottom: Val::Px(5.),
+                    left: Val::Px(25.),
+                    bottom: Val::Px(25.),
                     ..Default::default()
                 },
                 ..Default::default()
@@ -52,25 +55,39 @@ pub fn init(commands: &mut Commands) {
                     style: Style {
                         width: Val::Px(100.),
                         height: Val::Px(10.),
+                        position_type: PositionType::Absolute,
                         ..Default::default()
                     },
-                    background_color: Color::RED.into(),
+                    background_color: Color::GRAY.into(),
                     ..Default::default()
-                }).insert(Meter {
-                    max: 1.,
                 });
+
+                cooldown_container.spawn(NodeBundle {
+                    style: Style {
+                        width: Val::Px(100.),
+                        height: Val::Px(10.),
+                        position_type: PositionType::Absolute,
+                        ..Default::default()
+                    },
+                    background_color: Color::GREEN.into(),
+                    ..Default::default()
+                }).insert(Meter);
             });
         });
 }
 
 pub fn update_meters(
-    ball: Query<&Ball>,
-    mut query: Query<(&Meter, &mut Style), With<Meter>>
+    players: Query<&Player>,
+    local_players: Res<LocalPlayers>,
+    mut meters: Query<&mut Style, With<Meter>>,
 ) {
-    let ball = ball.single();
-    let (meter, mut style) = query.single_mut();
+    for player in &players {
+        if !local_players.0.contains(&player.handle) {
+            continue;
+        }
 
-    info!("{:?}", style.width);
-
-    style.width = Val::Px(100. - (100. * ball.cooldown / meter.max));
+        for mut style in meters.iter_mut() {
+            style.width = Val::Px(100. - (100. * player.cooldown / player.max_cooldown));
+        }
+    }
 }

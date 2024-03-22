@@ -18,12 +18,22 @@ pub fn init(
         ..default()
     });
     
+    // player 1
     spawn_ball(
         &mut commands,
         &mut meshes,
         materials.add(Color::WHITE),
         Vec3::new(0., 4., 0.),
-        1,
+        Some(0),
+    );
+
+    // player 2
+    spawn_ball(
+        &mut commands,
+        &mut meshes,
+        materials.add(Color::PURPLE),
+        Vec3::new(10., 4., 10.),
+        Some(1),
     );
 
     spawn_ball(
@@ -31,7 +41,7 @@ pub fn init(
         &mut meshes,
         striped.clone(),
         Vec3::new(5., 4., -8.),
-        0,
+        None,
     );
 
     spawn_ball(
@@ -39,7 +49,7 @@ pub fn init(
         &mut meshes,
         materials.add(Color::GREEN),
         Vec3::new(5., 4., 7.),
-        0,
+        None,
     );
 
     spawn_ball(
@@ -47,7 +57,7 @@ pub fn init(
         &mut meshes,
         materials.add(Color::YELLOW),
         Vec3::new(-6., 4., -9.),
-        0,
+        None,
     );
 
     spawn_ball(
@@ -55,21 +65,23 @@ pub fn init(
         &mut meshes,
         materials.add(Color::BLUE),
         Vec3::new(-6., 4., 8.),
-        0,
+        None,
     );
 }
+
+use bevy_ggrs::AddRollbackCommandExtension;
 
 fn spawn_ball(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     material: Handle<StandardMaterial>,
     position: Vec3,
-    player_number: u8,
+    handle: Option<usize>,
 ) {
     let radius = 2.25 / 10. * 5. / 2.;
 
     let mut ball = commands.spawn(PbrBundle {
-            mesh: meshes.add(Sphere::new(radius).mesh().uv(16, 16)),
+            mesh: meshes.add(Sphere::new(radius).mesh().uv(32, 16)),
             material,
             transform: Transform::from_translation(position),
             ..default()
@@ -79,16 +91,15 @@ fn spawn_ball(
         .insert(Collider::ball(radius))
         .insert(Friction::coefficient(1.))
         .insert(Velocity::linear(Vec3::ZERO))
-        .insert(Restitution::coefficient(0.7))
+        .insert(Restitution::coefficient(0.5))
         .insert(Damping { linear_damping: 0.9, angular_damping: 0.9, });
+    ball.add_rollback();
 
-    if player_number != 0 {
-        ball.insert(Ball { player: player_number, cooldown: 0., grounded: false });
+    if let Some(handle) = handle {
+        ball.insert(Player { handle, cooldown: 0., grounded: false, max_cooldown: 5. });
         ball.insert(ActiveEvents::COLLISION_EVENTS);
     }
 }
-
-
 
 fn striped_texture(stripe_color: Color) -> Image {
     const TEXTURE_SIZE: usize = 16;
