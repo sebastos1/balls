@@ -1,5 +1,4 @@
 use crate::*;
-use bevy_ggrs::LocalPlayers;
 
 pub fn init(
     commands: &mut Commands,
@@ -77,17 +76,10 @@ pub fn init(
 }
 
 pub fn update_meters(
-    players: Query<&Player>,
-    local_players: Res<LocalPlayers>,
+    global_charge: Res<GlobalCharge>,
     mut meters: Query<&mut Style, With<Meter>>,
 ) {
-    for player in &players {
-        if !local_players.0.contains(&player.handle) {
-            continue;
-        }
-
-        for mut style in meters.iter_mut() {
-            style.width = Val::Px(100. - (100. * player.cooldown / player.max_cooldown));
-        }
+    for mut style in meters.iter_mut() {
+        style.width = Val::Px(100. * global_charge.charge / 10.);
     }
 }

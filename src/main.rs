@@ -1,13 +1,14 @@
 use balls::*;
 use bevy::prelude::*;
 use bevy_ggrs::GgrsApp;
-use bevy_rapier3d::prelude::*;
 use bevy_ggrs::ReadInputs;
 use bevy_ggrs::GgrsSchedule;
+use bevy_rapier3d::prelude::*;
 
 fn main() {
     App::new()
         .init_state::<GameState>()
+        .insert_resource(GlobalCharge { charge: 0. })
         .add_plugins((
             DefaultPlugins.set(WindowPlugin {
                 primary_window: Some(Window {
@@ -23,7 +24,7 @@ fn main() {
         .rollback_component_with_clone::<Transform>()
         .rollback_component_with_clone::<Velocity>()
         .rollback_component_with_clone::<GlobalTransform>()
-        .add_systems(Startup, (setup, multiplayer::start_matchbox_socket))
+        .add_systems(Startup, (setup_world, multiplayer::start_matchbox_socket))
         .add_systems(Update, (
             multiplayer::wait_for_players.run_if(in_state(GameState::Matchmaking)),
             (
@@ -31,15 +32,15 @@ fn main() {
                 camera::pan_cam, 
                 camera::zoom, 
                 collisions::collision,
-                // ui::update_meters,
+                ui::update_meters,
             ).run_if(in_state(GameState::InGame)),
         ))
         .add_systems(ReadInputs, controls::read_local_inputs)
-        .add_systems(GgrsSchedule, multiplayer::move_players)
+        .add_systems(GgrsSchedule, multiplayer::read_inputs)
         .run();
 }
 
-fn setup(
+fn setup_world(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut images: ResMut<Assets<Image>>,

@@ -13,15 +13,18 @@ pub enum GameState {
     InGame,
 }
 
+#[derive(Resource)]
+pub struct GlobalCharge {
+    pub charge: f32,
+}
+
 #[derive(Component)]
 pub struct Ground;
 
 #[derive(Component)]
 pub struct Player {
-    pub handle: usize,
-    pub grounded: bool,
-    pub cooldown: f32,
-    pub max_cooldown: f32,
+    pub turn: usize,
+    pub charge: f32,
 }
 
 #[derive(Component)]

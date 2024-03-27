@@ -6,6 +6,7 @@ use bevy::{
         render_resource::{Extent3d, TextureDimension, TextureFormat},
     },
 };
+use bevy_ggrs::AddRollbackCommandExtension;
 
 pub fn init(
     mut commands: &mut Commands,
@@ -18,22 +19,13 @@ pub fn init(
         ..default()
     });
     
-    // player 1
+    // white ball
     spawn_ball(
         &mut commands,
         &mut meshes,
         materials.add(Color::WHITE),
         Vec3::new(0., 4., 0.),
         Some(0),
-    );
-
-    // player 2
-    spawn_ball(
-        &mut commands,
-        &mut meshes,
-        materials.add(Color::PURPLE),
-        Vec3::new(10., 4., 10.),
-        Some(1),
     );
 
     spawn_ball(
@@ -69,14 +61,12 @@ pub fn init(
     );
 }
 
-use bevy_ggrs::AddRollbackCommandExtension;
-
 fn spawn_ball(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     material: Handle<StandardMaterial>,
     position: Vec3,
-    handle: Option<usize>,
+    player_to_start: Option<usize>,
 ) {
     let radius = 2.25 / 10. * 5. / 2.;
 
@@ -95,8 +85,8 @@ fn spawn_ball(
         .insert(Damping { linear_damping: 0.9, angular_damping: 0.9, });
     ball.add_rollback();
 
-    if let Some(handle) = handle {
-        ball.insert(Player { handle, cooldown: 0., grounded: false, max_cooldown: 5. });
+    if let Some(player_to_start) = player_to_start {
+        ball.insert(Player { turn: player_to_start, charge: 0., });
         ball.insert(ActiveEvents::COLLISION_EVENTS);
     }
 }

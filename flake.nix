@@ -60,7 +60,7 @@
     in {
       defaultPackage = platform.buildRustPackage {
         src = ./.;
-        pname = "farmation";
+        pname = "balls";
         version = "0.1.0";
         cargoLock.lockFile = ./Cargo.lock;
         buildInputs = appBuildInputs;

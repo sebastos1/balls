@@ -6,35 +6,39 @@ use matchbox_socket::PeerId;
 use bevy_matchbox::MatchboxSocket;
 use bevy_matchbox::prelude::SingleChannel;
 
-pub const INPUT_UP: u8 = 1 << 0;
-pub const INPUT_DOWN: u8 = 1 << 1;
-pub const INPUT_LEFT: u8 = 1 << 2;
-pub const INPUT_RIGHT: u8 = 1 << 3;
-pub const INPUT_FIRE: u8 = 1 << 4;
-
 #[derive(Debug, Clone, Copy, PartialEq, Pod, Zeroable)]
 #[repr(C)]
 pub struct InputData {
     pub x: f32,
     pub y: f32,
+    pub power: f32,
 }
 
 pub type Config = bevy_ggrs::GgrsConfig<InputData, PeerId>;
 
-pub fn move_players(
+pub fn read_inputs(
     inputs: Res<PlayerInputs<Config>>,
-    mut players: Query<(&mut Velocity, &Player)>,
+    mut global_charge: ResMut<GlobalCharge>,
+    mut players: Query<(&mut Velocity, &mut Player)>,
 ) {
-    for (mut velocity, player) in players.iter_mut() {
-        if let Some((input, _)) = inputs.get(player.handle) {
-            let speed = 0.1;
-            let dir = Vec3::new(input.x, 0., input.y);
+    let (mut velocity, mut player) = players.single_mut();
+    let (input, _) = inputs.get(player.turn).unwrap();
+    if input.x != 0. || input.y != 0. {
+        info!("this is input {:?}", input);
+        let speed = input.power * 3.;
+        let dir = Vec3::new(input.x, 0., input.y);
 
-            if dir.length() != 0. {
-                velocity.linvel += dir * speed;
+        if dir.length() != 0. {
+            velocity.linvel += dir * speed;
+
+            if player.turn == 0 {
+                player.turn = 1;
+            } else {
+                player.turn = 0;
             }
         }
     }
+    global_charge.charge = input.power;
 }
 
 pub fn start_matchbox_socket(mut commands: Commands) {
