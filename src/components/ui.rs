@@ -80,6 +80,6 @@ pub fn update_meters(
     mut meters: Query<&mut Style, With<Meter>>,
 ) {
     for mut style in meters.iter_mut() {
-        style.width = Val::Px(100. * global_charge.charge / 10.);
+        style.width = Val::Px(100. * global_charge.charge / 20.);
     }
 }

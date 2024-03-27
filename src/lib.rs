@@ -13,9 +13,57 @@ pub enum GameState {
     InGame,
 }
 
+// #[derive(Resource)]
+// pub struct SyncResources {
+//     rng_seed: u64,
+// }
+
 #[derive(Resource)]
 pub struct GlobalCharge {
     pub charge: f32,
+}
+
+pub enum BallType {
+    Striped,
+    Solid,
+    Cue,
+    Eight,
+}
+
+#[derive(Component)]
+pub struct Ball {
+    pub number: u8,
+    pub color: Color,
+    pub ball_type: BallType,
+}
+
+impl Ball {
+    pub fn new(number: u8) -> Self {
+        Ball {
+            number,
+
+            ball_type: match number {
+                0 => BallType::Cue,
+                8 => BallType::Eight,
+                1..=7 => BallType::Solid,
+                9..=15 => BallType::Striped,
+                _ => unreachable!(),
+            },
+
+            color: match number {
+                0 => Color::WHITE,
+                1 | 9 => Color::YELLOW,
+                2 | 10 => Color::BLUE,
+                3 | 11 => Color::RED,
+                4 | 12 => Color::PURPLE,
+                5 | 13 => Color::ORANGE,
+                6 | 14 => Color::GREEN,
+                7 | 15 => Color::MAROON,
+                8 => Color::BLACK,
+                _ => panic!("Invalid ball number: {}", number),
+            },
+        }
+    }
 }
 
 #[derive(Component)]

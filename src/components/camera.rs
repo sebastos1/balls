@@ -5,7 +5,7 @@ pub fn init(
     commands: &mut Commands,
 ) {
     commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(10., 3., 10.).looking_at(Vec3::ZERO, Vec3::Y),
+        transform: Transform::from_xyz(-25., 3., 0.).looking_at(Vec3::ZERO, Vec3::Y),
         projection: PerspectiveProjection { ..default() }.into(),
         ..Default::default()
     }).insert(View { zoom: 10., pitch: 0., yaw: 0. });

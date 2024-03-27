@@ -18,7 +18,7 @@ fn main() {
                 ..default()
             }),
             RapierPhysicsPlugin::<NoUserData>::default(),
-            RapierDebugRenderPlugin::default(),
+            // RapierDebugRenderPlugin::default(),
             bevy_ggrs::GgrsPlugin::<multiplayer::Config>::default(),
         ))
         .rollback_component_with_clone::<Transform>()
@@ -46,7 +46,7 @@ fn setup_world(
     mut images: ResMut<Assets<Image>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    arena::init(&mut commands, &mut meshes, &mut materials);
+    arena::init(&mut commands, &mut meshes, &mut images, &mut materials);
     ball::init(&mut commands, &mut meshes, &mut images, &mut materials);
     ui::init(&mut commands);
     camera::init(&mut commands);

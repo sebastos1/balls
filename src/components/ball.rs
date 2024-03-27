@@ -1,133 +1,98 @@
 use crate::*;
-use bevy::{
-    render::{
-        texture::ImageSampler,
-        render_asset::RenderAssetUsages,
-        render_resource::{Extent3d, TextureDimension, TextureFormat},
-    },
-};
 use bevy_ggrs::AddRollbackCommandExtension;
+use crate::components::arena::ARENA_LENGTH;
+use crate::components::textures::striped_texture;
+
+const RADIUS: f32 = 2.25 / 10. * 5. / 2.;
 
 pub fn init(
-    mut commands: &mut Commands,
-    mut meshes: &mut ResMut<Assets<Mesh>>,
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
     images: &mut ResMut<Assets<Image>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
 ) {
-    let striped = materials.add(StandardMaterial {
-        base_color_texture: Some(images.add(striped_texture(Color::RED))),
-        ..default()
-    });
-    
-    // white ball
-    spawn_ball(
-        &mut commands,
-        &mut meshes,
-        materials.add(Color::WHITE),
-        Vec3::new(0., 4., 0.),
-        Some(0),
-    );
-
-    spawn_ball(
-        &mut commands,
-        &mut meshes,
-        striped.clone(),
-        Vec3::new(5., 4., -8.),
-        None,
-    );
-
-    spawn_ball(
-        &mut commands,
-        &mut meshes,
-        materials.add(Color::GREEN),
-        Vec3::new(5., 4., 7.),
-        None,
-    );
-
-    spawn_ball(
-        &mut commands,
-        &mut meshes,
-        materials.add(Color::YELLOW),
-        Vec3::new(-6., 4., -9.),
-        None,
-    );
-
-    spawn_ball(
-        &mut commands,
-        &mut meshes,
-        materials.add(Color::BLUE),
-        Vec3::new(-6., 4., 8.),
-        None,
-    );
-}
-
-fn spawn_ball(
-    commands: &mut Commands,
-    meshes: &mut ResMut<Assets<Mesh>>,
-    material: Handle<StandardMaterial>,
-    position: Vec3,
-    player_to_start: Option<usize>,
-) {
-    let radius = 2.25 / 10. * 5. / 2.;
-
-    let mut ball = commands.spawn(PbrBundle {
-            mesh: meshes.add(Sphere::new(radius).mesh().uv(32, 16)),
-            material,
-            transform: Transform::from_translation(position),
-            ..default()
-        });
-    
-    ball.insert(RigidBody::Dynamic)
-        .insert(Collider::ball(radius))
-        .insert(Friction::coefficient(1.))
-        .insert(Velocity::linear(Vec3::ZERO))
-        .insert(Restitution::coefficient(0.5))
-        .insert(Damping { linear_damping: 0.9, angular_damping: 0.9, });
-    ball.add_rollback();
-
-    if let Some(player_to_start) = player_to_start {
-        ball.insert(Player { turn: player_to_start, charge: 0., });
-        ball.insert(ActiveEvents::COLLISION_EVENTS);
+    macro_rules! striped_material {
+        ($stripe_color:expr) => {
+            materials.add(StandardMaterial {
+                base_color_texture: Some(images.add(striped_texture($stripe_color))),
+                ..default()
+            })
+        };
     }
-}
+    
+    // u8, vec3 with middle field being radius
+    macro_rules! spawn_ball {
+        ($number:expr, $position:expr) => {
+            let ball_finish = Ball::new($number);
 
-fn striped_texture(stripe_color: Color) -> Image {
-    const TEXTURE_SIZE: usize = 16;
-    const STRIPE_THICKNESS: usize = 8;
-
-    let mut texture_data = [0; TEXTURE_SIZE * TEXTURE_SIZE * 4];
-
-    for y in 0..TEXTURE_SIZE {
-        for x in 0..TEXTURE_SIZE {
-            let index = (y * TEXTURE_SIZE + x) * 4;
-
-            let is_stripe = y >= TEXTURE_SIZE / 2 - STRIPE_THICKNESS / 2
-                && y < TEXTURE_SIZE / 2 + STRIPE_THICKNESS / 2;
-
-            let color = if is_stripe {
-                stripe_color
-            } else {
-                Color::WHITE
+            let material = match ball_finish.ball_type {
+                BallType::Solid => materials.add(ball_finish.color),
+                BallType::Striped => striped_material!(ball_finish.color),
+                BallType::Cue => materials.add(Color::WHITE),
+                BallType::Eight => materials.add(Color::BLACK),
             };
 
-            texture_data[index] = (color.r() * 255.0) as u8;
-            texture_data[index + 1] = (color.g() * 255.0) as u8;
-            texture_data[index + 2] = (color.b() * 255.0) as u8;
-            texture_data[index + 3] = 255;
-        }
+            let mut ball = commands.spawn(PbrBundle {
+                mesh: meshes.add(Sphere::new(RADIUS).mesh().uv(32, 16)),
+                material,
+                transform: Transform::from_translation($position),
+                ..default()
+            });
+        
+            ball.insert(ball_finish)
+                .insert(RigidBody::Dynamic)
+                .insert(Collider::ball(RADIUS))
+                .insert(Friction::coefficient(1.))
+                .insert(Velocity::linear(Vec3::ZERO))
+                .insert(Restitution::coefficient(0.5))
+                .insert(Damping { linear_damping: 0.9, angular_damping: 0.9, });
+            ball.add_rollback();
+
+            if $number == 0 {
+                ball.insert(Player { turn: 0, charge: 0., });
+                ball.insert(ActiveEvents::COLLISION_EVENTS);
+            }
+        };
     }
 
-    let mut image = Image::new_fill(
-        Extent3d {
-            width: TEXTURE_SIZE as u32,
-            height: TEXTURE_SIZE as u32,
-            depth_or_array_layers: 1,
-        },
-        TextureDimension::D2,
-        &texture_data,
-        TextureFormat::Rgba8UnormSrgb,
-        RenderAssetUsages::RENDER_WORLD,
-    );
-    image.sampler = ImageSampler::nearest();
-    image
+    // spawn white ball on one side
+    spawn_ball!(0, Vec3::new(-ARENA_LENGTH / 4., RADIUS, 0.));
+
+    // center of other side
+    let anchor = Vec3::new(ARENA_LENGTH / 4., RADIUS, 0.);
+
+    let row_x_offset = (3.0f32.sqrt()) * RADIUS; //sqrt(3)r
+    let row_z_offset = -RADIUS;
+    let column_offset = 2. * RADIUS;
+
+    let mut positions: Vec<Vec3> = Vec::new();
+    for ball_number in 1..16 {
+        let (row, col) = calc_pos(ball_number);
+        let mut pos = anchor;
+        pos += Vec3::new(row_x_offset, 0., row_z_offset) * row; 
+        pos += Vec3::new(0., 0., column_offset) * col;
+        positions.push(pos);
+    }
+
+    use rand::thread_rng;
+    use rand::seq::SliceRandom;
+
+    let mut rng = thread_rng();
+    positions.shuffle(&mut rng);
+
+    for (i, pos) in positions.iter().enumerate() {
+        spawn_ball!(i as u8 + 1, *pos);
+    }
+
+    fn calc_pos(number: u8) -> (f32, f32) {
+        // overkill, but since every row has one more ball than the previous one, we can use:
+        //      k(k+1)/2 >= n
+        // to get the row, and:
+        //      n - k(k-1)/2
+        // to get the column
+        let n = number as f32;
+        let row = (((8. * n + 1.).sqrt() - 1.) / 2.).ceil();
+        let column = n - (row * (row - 1.) / 2.).floor();
+        (row -1., column -1.)
+    }
 }

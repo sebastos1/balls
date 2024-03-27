@@ -23,8 +23,8 @@ pub fn read_local_inputs(
         let mut player = players.single_mut();
         if *handle == player.turn {
             if keys.pressed(KeyCode::Space) {
-                if player.charge < 10. {
-                    player.charge += 0.1;
+                if player.charge < 20. {
+                    player.charge += 0.5;
                 }
                 input.power = player.charge;
                 info!("charging: {}", player.charge);
